@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Thi Trắc Nghiệm HVAC</title>
+
+<style>
+body { font-family: Arial; background:#f4f6f8; }
+.container {
+    width: 900px; margin: auto; background:#fff;
+    padding: 20px; border-radius: 8px;
+}
+h1 { text-align:center; }
+.timer { color:red; font-weight:bold; text-align:right; }
+.question { margin-bottom: 15px; }
+.nav-btns { text-align:center; margin-top:20px; }
+button {
+    padding:8px 16px; margin:5px;
+    font-size:16px; cursor:pointer;
+}
+.hidden { display:none; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>THI TRẮC NGHIỆM HVAC</h1>
+
+<div id="timer" class="timer">⏰ Thời gian: 30:00</div>
+
+<!-- ĐĂNG NHẬP -->
+<div id="loginBox">
+    <input type="text" id="username" placeholder="Nhập tên">
+    <button onclick="login()">Đăng nhập</button>
+</div>
+
+<!-- KHU VỰC THI -->
+<div id="examBox" class="hidden">
+    <div id="questionArea"></div>
+
+    <div class="nav-btns">
+        <button onclick="prevPage()">⬅ Trang trước</button>
+        <span id="pageInfo"></span>
+        <button onclick="nextPage()">Trang sau ➡</button>
+    </div>
+
+    <div class="nav-btns">
+        <button onclick="submitExam()">📝 Nộp bài</button>
+        <button onclick="logout()">🚪 Thoát</button>
+    </div>
+</div>
+
+<div id="result" class="hidden"></div>
+
+</div>
+
+<script>
+// ====== CẤU HÌNH ======
+const totalTime = 30 * 60; // 30 phút
+const perPage = 5;
+
+// ====== 50 CÂU HỎI HVAC (MẪU 10 CÂU, COPY THÀNH 50) ======
+const questions = [
+ {q:"HVAC là viết tắt của?", a:["Heating Ventilation Air Conditioning","Heat Ventilation Auto Control","High Voltage AC","Không có"], c:0},
+ {q:"Chức năng chính HVAC?", a:["Làm lạnh","Sưởi","Thông gió","Tất cả"], c:3},
+ {q:"Dàn nóng dùng để?", a:["Thu nhiệt","Xả nhiệt","Lọc khí","Tạo ẩm"], c:1},
+ {q:"Môi chất lạnh dùng để?", a:["Truyền nhiệt","Tạo gió","Lọc bụi","Tạo oxy"], c:0},
+ {q:"COP là?", a:["Hiệu suất","Công suất","Áp suất","Nhiệt độ"], c:0},
+
+ {q:"AHU là?", a:["Air Handling Unit","Air Heating Unit","Auto Heat Unit","None"], c:0},
+ {q:"FCU là?", a:["Fan Coil Unit","Fast Cooling Unit","Fan Control Unit","None"], c:0},
+ {q:"Chiller dùng để?", a:["Tạo nước lạnh","Tạo gió","Sưởi","Lọc khí"], c:0},
+ {q:"VRV/VRF là?", a:["Điều hòa trung tâm","Cục bộ","Quạt gió","Thông gió"], c:0},
+ {q:"Thông gió nhằm?", a:["Cấp khí tươi","Giảm CO2","Khử mùi","Tất cả"], c:3}
+
+ // 👉 COPY thêm cho đủ 50 câu
+];
+
+let answers = new Array(questions.length);
+let currentPage = 0;
+let timeLeft = totalTime;
+let timer;
+
+// ====== ĐĂNG NHẬP ======
+function login(){
+    if(!username.value) return alert("Nhập tên!");
+    loginBox.classList.add("hidden");
+    examBox.classList.remove("hidden");
+    startTimer();
+    renderPage();
+}
+
+// ====== ĐỒNG HỒ ======
+function startTimer(){
+    timer = setInterval(()=>{
+        let m = Math.floor(timeLeft/60);
+        let s = timeLeft%60;
+        timer.innerText = `⏰ Thời gian: ${m}:${s<10?'0':''}${s}`;
+        if(--timeLeft < 0){
+            clearInterval(timer);
+            submitExam();
+        }
+    },1000);
+}
+
+// ====== HIỂN THỊ CÂU HỎI ======
+function renderPage(){
+    let start = currentPage * perPage;
+    let end = Math.min(start + perPage, questions.length);
+    questionArea.innerHTML = "";
+
+    for(let i=start;i<end;i++){
+        let q = questions[i];
+        let html = `<div class="question"><b>Câu ${i+1}:</b> ${q.q}<br>`;
+        q.a.forEach((opt,j)=>{
+            html += `<label>
+                <input type="radio" name="q${i}" ${answers[i]==j?'checked':''}
+                onclick="answers[${i}]=${j}">
+                ${opt}
+            </label><br>`;
+        });
+        html += "</div>";
+        questionArea.innerHTML += html;
+    }
+
+    pageInfo.innerText = `Trang ${currentPage+1} / ${Math.ceil(questions.length/perPage)}`;
+}
+
+// ====== ĐIỀU HƯỚNG ======
+function nextPage(){ if((currentPage+1)*perPage < questions.length){ currentPage++; renderPage();}}
+function prevPage(){ if(currentPage>0){ currentPage--; renderPage();}}
+
+// ====== NỘP BÀI ======
+function submitExam(){
+    clearInterval(timer);
+    let score = 0;
+    questions.forEach((q,i)=>{ if(answers[i]==q.c) score++; });
+    examBox.classList.add("hidden");
+    result.classList.remove("hidden");
+    result.innerHTML = `<h2>✅ Kết quả</h2>
+        <p>Đúng: ${score}/50</p>
+        <p>Điểm: ${(score/50*10).toFixed(2)}/10</p>`;
+}
+
+// ====== THOÁT ======
+function logout(){
+    location.reload();
+}
+</script>
+
+</body>
+</html>
