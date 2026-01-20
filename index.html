@@ -1,61 +1,155 @@
-# 📝 Website Thi Trắc Nghiệm HVAC
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Thi Trắc Nghiệm HVAC</title>
 
-## 📌 Giới thiệu
-Đây là **website thi trắc nghiệm HVAC** được xây dựng bằng **HTML, CSS và JavaScript thuần**,  
-cho phép người dùng làm bài kiểm tra kiến thức HVAC trực tiếp trên trình duyệt **không cần server**.
+<style>
+body { font-family: Arial; background:#f4f6f8; }
+.container {
+    width: 900px; margin: auto; background:#fff;
+    padding: 20px; border-radius: 8px;
+}
+h1 { text-align:center; }
+.timer { color:red; font-weight:bold; text-align:right; }
+.question { margin-bottom: 15px; }
+.nav-btns { text-align:center; margin-top:20px; }
+button {
+    padding:8px 16px; margin:5px;
+    font-size:16px; cursor:pointer;
+}
+.hidden { display:none; }
+</style>
+</head>
 
-Website phù hợp cho:
-- Ôn tập kiến thức HVAC
-- Kiểm tra nhanh trình độ sinh viên
-- Demo đồ án / bài tập môn học
+<body>
 
----
+<div class="container">
 
-## ❓ HVAC là gì?
-**HVAC** là viết tắt của:
-- **H**eating – Sưởi ấm  
-- **V**entilation – Thông gió  
-- **A**ir  
-- **C**onditioning – Điều hòa không khí  
+<h1>THI TRẮC NGHIỆM HVAC</h1>
 
-Hệ thống HVAC giúp kiểm soát **nhiệt độ, độ ẩm và chất lượng không khí** trong các tòa nhà.
+<div id="timer" class="timer">⏰ Thời gian: 30:00</div>
 
----
+<!-- ĐĂNG NHẬP -->
+<div id="loginBox">
+    <input type="text" id="username" placeholder="Nhập tên">
+    <button onclick="login()">Đăng nhập</button>
+</div>
 
-## 🎯 Mục tiêu của website
-- Tạo môi trường thi trắc nghiệm HVAC đơn giản, dễ sử dụng
-- Giúp sinh viên tự đánh giá kiến thức
-- Làm nền tảng để mở rộng thành hệ thống thi online hoàn chỉnh
+<!-- KHU VỰC THI -->
+<div id="examBox" class="hidden">
+    <div id="questionArea"></div>
 
----
+    <div class="nav-btns">
+        <button onclick="prevPage()">⬅ Trang trước</button>
+        <span id="pageInfo"></span>
+        <button onclick="nextPage()">Trang sau ➡</button>
+    </div>
 
-## 👥 Đối tượng sử dụng
-- Sinh viên ngành:
-  - Cơ điện (M&E)
-  - HVAC
-  - Tự động hóa
-- Giảng viên tạo đề thi mẫu
-- Người tự học HVAC cơ bản
+    <div class="nav-btns">
+        <button onclick="submitExam()">📝 Nộp bài</button>
+        <button onclick="logout()">🚪 Thoát</button>
+    </div>
+</div>
 
----
+<div id="result" class="hidden"></div>
 
-## ⚙️ Chức năng chính
-- Đăng nhập bằng tên thí sinh
-- Làm bài trắc nghiệm HVAC
-- Đồng hồ đếm ngược thời gian làm bài
-- Chia câu hỏi theo từng trang
-- Tự động chấm điểm khi nộp bài
-- Hiển thị kết quả sau khi hoàn thành
+</div>
 
----
+<script>
+const totalTime = 30 * 60; // 30 phút
+const perPage = 5;
 
-## 🖥️ Công nghệ sử dụng
-- **HTML**: Xây dựng cấu trúc trang web  
-- **CSS**: Thiết kế giao diện  
-- **JavaScript**: Xử lý logic thi, tính điểm, đếm thời gian  
+const questions = [
+ {q:"HVAC là viết tắt của?", a:["Heating Ventilation Air Conditioning","Heat Ventilation Auto Control","High Voltage AC","Không có"], c:0},
+ {q:"Chức năng chính HVAC?", a:["Làm lạnh","Sưởi","Thông gió","Tất cả"], c:3},
+ {q:"Dàn nóng dùng để?", a:["Thu nhiệt","Xả nhiệt","Lọc khí","Tạo ẩm"], c:1},
+ {q:"Môi chất lạnh dùng để?", a:["Truyền nhiệt","Tạo gió","Lọc bụi","Tạo oxy"], c:0},
+ {q:"COP là?", a:["Hiệu suất","Công suất","Áp suất","Nhiệt độ"], c:0}
+];
 
-👉 Không sử dụng framework, dễ đọc và dễ chỉnh sửa.
+let answers = new Array(questions.length);
+let currentPage = 0;
+let timeLeft = totalTime;
+let timer;
 
----
+function login(){
+    if(!username.value) return alert("Nhập tên!");
+    loginBox.classList.add("hidden");
+    examBox.classList.remove("hidden");
+    startTimer();
+    renderPage();
+}
 
-## 📂 Cấu trúc file
+function startTimer(){
+    timer = setInterval(()=>{
+        let m = Math.floor(timeLeft/60);
+        let s = timeLeft%60;
+        document.getElementById("timer").innerText =
+        `⏰ Thời gian: ${m}:${s<10?'0':''}${s}`;
+        if(--timeLeft < 0){
+            clearInterval(timer);
+            submitExam();
+        }
+    },1000);
+}
+
+function renderPage(){
+    let start = currentPage * perPage;
+    let end = Math.min(start + perPage, questions.length);
+    questionArea.innerHTML = "";
+
+    for(let i=start;i<end;i++){
+        let q = questions[i];
+        let html = `<div class="question"><b>Câu ${i+1}:</b> ${q.q}<br>`;
+        q.a.forEach((opt,j)=>{
+            html += `<label>
+                <input type="radio" name="q${i}"
+                ${answers[i]==j?'checked':''}
+                onclick="answers[${i}]=${j}">
+                ${opt}
+            </label><br>`;
+        });
+        html += "</div>";
+        questionArea.innerHTML += html;
+    }
+
+    pageInfo.innerText =
+    `Trang ${currentPage+1} / ${Math.ceil(questions.length/perPage)}`;
+}
+
+function nextPage(){
+    if((currentPage+1)*perPage < questions.length){
+        currentPage++;
+        renderPage();
+    }
+}
+
+function prevPage(){
+    if(currentPage>0){
+        currentPage--;
+        renderPage();
+    }
+}
+
+function submitExam(){
+    clearInterval(timer);
+    let score = 0;
+    questions.forEach((q,i)=>{
+        if(answers[i]==q.c) score++;
+    });
+    examBox.classList.add("hidden");
+    result.classList.remove("hidden");
+    result.innerHTML = `
+    <h2>✅ Kết quả</h2>
+    <p>Đúng: ${score}/${questions.length}</p>
+    <p>Điểm: ${(score/questions.length*10).toFixed(2)}/10</p>`;
+}
+
+function logout(){
+    location.reload();
+}
+</script>
+
+</body>
+</html>
